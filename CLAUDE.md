@@ -1,4 +1,4 @@
-BeautyMed project brief, version 5.1. This version replaces any earlier version of the brief.
+BeautyMed project brief, version 5.3. This version replaces any earlier version of the brief.
 
 <role_and_goal>
 You are building a production-quality Persian (RTL) web platform for aesthetic medicine called BeautyMed, at the domain beautymed.ir. It combines: a store for mesotherapy products and dermal fillers sold only to verified medical professionals; educational hubs on aesthetic methods, filler types, mesotherapy, PRP and PRF; gated training for physicians; a portal for importer companies; and a library of recent PubMed articles with Persian translations.
@@ -27,22 +27,26 @@ This project lives in the GitHub repository yashar. ECC is not stored in the rep
 </repository>
 
 <ecc_skills>
-The ECC skills in this repository are a resource I want you to use fully: in every phase, use each ECC skill that genuinely fits the work at hand. Read a skill's description before relying on it, and skip it if it turns out not to fit; a skill that does not fit costs time and can pull the work away from this brief.
-Likely candidates by phase, chosen from their names (confirm each by reading it):
-- Phase 0: plan, blueprint, architecture-decision-records, api-design, postgres-patterns, prisma-patterns, search-first, documentation-lookup
-- Phase 1: frontend-design-direction, design-system, frontend-patterns, react-patterns, nextjs-turbopack, frontend-a11y, accessibility, browser-qa
-- Phase 2: backend-patterns, typescript-patterns, security-review, error-handling, tdd-workflow
-- Phase 3: backend-patterns, database-migrations, e2e-testing, security-review
-- Phase 4: react-patterns, e2e-testing
-- Phase 5: scientific-db-pubmed-database, cost-aware-llm-pipeline, prompt-caching-strategy, prompt-optimizer, agent-security-hardening
-- Phase 6: seo, production-audit, security-scan, react-performance, deployment-patterns, update-docs
-- Every phase, before you report it done: code-review or react-review, verification-loop, quality-gate, test-coverage; and build-fix whenever a build breaks.
-Rules:
-- This brief wins any conflict with an ECC skill's defaults, for example on design choices, motion, or when to stop and ask.
-- Ask me before using skills that run autonomous loops or multi-agent orchestration (such as loop-start, santa-loop, continuous-agent-loop, autonomous-agent-harness, multi-execute, multi-workflow, orch-build-mvp, gan-build, team-agent-orchestration, claude-devfleet), because they can run past the phase stops I rely on.
-- Use skills that commit, push or open pull requests (such as pr, prp-pr, prp-commit, checkpoint) only inside the end-of-phase git sequence.
-- Do not use skills that change ECC itself (such as configure-ecc, hookify, skill-create, evolve, promote, prune, instinct-import) unless I ask.
-- If an ECC hook does something on its own that conflicts with this brief, such as committing or pushing, stop and tell me.
+This project has two goals: build BeautyMed, and find out in practice what the ECC skills can do. Using ECC is therefore required, not optional.
+- In every phase, run every ECC skill listed for that phase below, plus any other ECC skill you find relevant. Read each skill before running it. If a skill turns out not to fit, still run it on the closest part of the work and record in the log why it did not fit; that finding is part of what I want to learn.
+- This brief remains the final judge of the code. If a skill suggests something that conflicts with it (design, motion, scope, when to stop), do not apply that suggestion, and record the conflict in the log.
+- Skills by phase:
+  - Phase 0: plan, blueprint, architecture-decision-records, api-design, postgres-patterns, prisma-patterns, search-first, documentation-lookup
+  - Phase 1: frontend-design-direction, design-system, frontend-patterns, react-patterns, nextjs-turbopack, frontend-a11y, accessibility, browser-qa
+  - Phase 2: backend-patterns, typescript-patterns, security-review, error-handling, tdd-workflow
+  - Phase 3: backend-patterns, database-migrations, e2e-testing, security-review
+  - Phase 4: react-patterns, e2e-testing
+  - Phase 5: scientific-db-pubmed-database, cost-aware-llm-pipeline, prompt-caching-strategy, prompt-optimizer, agent-security-hardening
+  - Phase 6: seo, production-audit, security-scan, react-performance, deployment-patterns, update-docs
+  - Every phase, before you report it done: code-review or react-review, verification-loop, quality-gate, test-coverage; and build-fix whenever a build breaks.
+- When an ECC skill writes to a default location outside beautymed/ (such as plans/ or docs/adr/), or creates its own branches or pull requests, run it anyway with its output redirected into beautymed/docs/ and without its own branch or pull-request steps. Log the adaptation. Skip a skill only if it cannot run at all under these limits, and log why.
+- Orchestration and loop skills (such as orch-build-mvp, orch-add-feature, multi-execute, multi-workflow, loop-start, santa-loop, gan-build, team-agent-orchestration, claude-devfleet) are allowed when the approved phase plan lists them. Where one fits a phase, propose it in that phase's plan. They must stop at the phase boundary like everything else: I want to see what they can do, but not past my checkpoints.
+- Ask me first before skills that change ECC itself or its settings (such as configure-ecc, hookify, skill-create, evolve, promote, prune, instinct-import), because those changes outlast this project.
+- Skills that commit, push or open pull requests (such as pr, prp-pr, prp-commit, checkpoint) run only inside the end-of-phase git sequence.
+- If an ECC hook acts on its own, record what it did in the log. If it conflicts with this brief, for example by committing or pushing, stop and tell me.
+- Keep beautymed/docs/ECC_LOG.md as a table with one row per skill run, in this format:
+  | Phase | Skill | What it did | What it produced or changed | Verdict (useful / partly / not useful) with a one-line reason | Conflict with brief, if any |
+  At the end of every phase, summarize that phase's rows in Persian in your report: which skills earned their place and which did not.
 </ecc_skills>
 
 <tech_stack>
