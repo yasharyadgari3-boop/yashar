@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. These seven colors are the only colors in the design (see src/lib/tokens.ts,
+ * which a unit test keeps in sync with this file). Gold is an accent, never a fill.
+ */
+@theme {
+  --color-*: initial;
+  --color-bg: #ffffff;
+  --color-alt: #f6f5f2;
+  --color-gold: #c5a46d; /* decoration only: rules, borders, icons. Never text. */
+  --color-gold-deep: #8a6a35; /* any gold text and links */
+  --color-ink: #1a1a1a;
+  --color-muted: #6b6b6b;
+  --color-line: #e7e2d8;
+
+  /* Single token for the Persian typeface, so it can be swapped for a licensed font later. */
+  --font-fa: "Vazirmatn Variable", "Vazirmatn", Tahoma, sans-serif;
+  /* Latin brand names and Latin numerals in headings use the serif; Persian glyphs fall through. */
+  --font-display: "Playfair Display Variable", "Playfair Display", "Vazirmatn Variable", "Vazirmatn", serif;
+
+  --radius-*: initial;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  --shadow-*: initial;
+  --shadow-hover: 0 12px 32px rgb(26 26 26 / 0.07);
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-fa);
+    color: var(--color-ink);
+    background: var(--color-bg);
+    line-height: 1.9;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-deep);
+    outline-offset: 3px;
+  }
+
+  .on-dark :focus-visible,
+  .on-dark:focus-visible {
+    outline-color: var(--color-bg);
+  }
+
+  ::selection {
+    background: var(--color-line);
+  }
+}
+
+@layer components {
+  .latin {
+    font-family: var(--font-display);
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  .link {
+    color: var(--color-gold-deep);
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 1px;
+  }
+
+  .gold-rule {
+    display: block;
+    width: 3rem;
+    height: 1px;
+    background: var(--color-gold);
+  }
+
+  /* Visually hidden, still read by screen readers. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/*
+ * Motion. Only three effects exist in the whole site:
+ *   1. fade-up reveal on scroll   (.reveal)
+ *   2. slow image reveal          (.img-reveal)
+ *   3. gentle image zoom on hover (.card-zoom)
+ * Content is hidden before reveal only when scripting is available, so nothing
+ * disappears without JavaScript. Everything is disabled under prefers-reduced-motion.
+ */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 1000ms ease,
+      transform 1000ms ease;
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .img-reveal {
+    opacity: 0;
+    transition: opacity 1600ms ease;
+  }
+
+  .img-reveal.is-visible {
+    opacity: 1;
+  }
+
+  .card-zoom .card-zoom-media > * {
+    transition: transform 1400ms ease;
+  }
+
+  .card-zoom:hover .card-zoom-media > * {
+    transform: scale(1.035);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,4 +1,4 @@
-BeautyMed project brief, version 5.3. This version replaces any earlier version of the brief.
+BeautyMed project brief, version 5.4. This version replaces any earlier version of the brief.
 
 <role_and_goal>
 You are building a production-quality Persian (RTL) web platform for aesthetic medicine called BeautyMed, at the domain beautymed.ir. It combines: a store for mesotherapy products and dermal fillers sold only to verified medical professionals; educational hubs on aesthetic methods, filler types, mesotherapy, PRP and PRF; gated training for physicians; a portal for importer companies; and a library of recent PubMed articles with Persian translations.
@@ -15,6 +15,17 @@ I am a physician, not a developer, and I am new to the terminal. We will build t
 - Keep beautymed/docs/PROGRESS.md as the project's progress note. At the end of every phase, record what was done, what is still placeholder, and what comes next, so the next session can continue without me explaining anything. If docs/PROGRESS.md exists at the repository root from an earlier session, move it there.
 - Git workflow: new sessions start from the main branch, so work that is not merged into main is invisible to the next session. At the end of each phase, once I approve the result, commit, push the working branch, open a pull request to main, and merge it if you can; if you cannot, walk me through merging it on GitHub step by step. This standing approval covers only that end-of-phase sequence. Ask before any other push, any force-push, or deleting a branch.
 </working_with_me>
+
+<delivery_mode>
+From version 5.4 the rest of the project is delivered in two steps, to save usage. Where this section conflicts with <working_with_me> or <ecc_skills>, this section wins.
+- Step 1: build Phases 1, 2 and 3 back to back. Step 2: the remaining phases, which I start with a later message.
+- Within a step, do not stop between phases to report or ask, and do not send a message that only announces the next step; do the next step. Stop only in three cases: the end of the step, a decision that is irreversible or costs money, or a blocker you cannot remove yourself.
+- At the end of each phase, once its definition of done is met, commit, push, open a pull request to main and merge it, without asking. This is a standing approval.
+- Run each phase's listed ECC skills once and log them in ECC_LOG.md. The review skills (code-review, verification-loop, quality-gate, test-coverage) run only once, at the end of the step. Do not use subagents or orchestration skills. Run build-fix only when a build breaks.
+- Phase 2 database: first try to run PostgreSQL inside the working environment. If that fails, choose the most reliable alternative you have tested yourself for development and tests, and say so in the report.
+- End-of-step report, short and in Persian: what was built, what is still sample or mock, a few lines summarizing ECC_LOG, and step by step how I can see the site.
+- Phase 1 newsletter: subscribers are stored through a file-backed mock store.
+</delivery_mode>
 
 <session_start>
 At the start of every session, read beautymed/docs/PROGRESS.md. If it does not exist, we are at Phase 0. Tell me in Persian, in two or three sentences, where the project stands and which phase is next, then show the plan for that phase and wait for my approval.
