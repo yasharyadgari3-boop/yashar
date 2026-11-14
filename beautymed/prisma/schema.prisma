@@ -1,0 +1,157 @@
+// BeautyMed data model.
+// Conventions (see docs/PROGRESS.md): every timestamp is timestamptz, prices are whole Toman
+// integers, every foreign key is indexed, medical/commercial records are soft-deleted.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PHYSICIAN
+  IMPORTER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        String    @id @default(cuid())
+  /// Normalized Iranian mobile number: 09xxxxxxxxx
+  mobile    String    @unique
+  /// Null until the person chooses physician or importer during onboarding.
+  role      Role?
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  deletedAt DateTime? @db.Timestamptz
+
+  physician PhysicianProfile?
+  importer  ImporterProfile?
+  sessions  Session[]
+  documents VerificationDocument[]
+  auditLogs AuditLog[]
+}
+
+model PhysicianProfile {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id])
+  fullName             String
+  /// شماره نظام پزشکی
+  medicalCouncilNumber String
+  clinicName           String?
+  status               VerificationStatus @default(PENDING)
+  rejectionReason      String?
+  reviewedById         String?
+  reviewedAt           DateTime?          @db.Timestamptz
+  createdAt            DateTime           @default(now()) @db.Timestamptz
+  updatedAt            DateTime           @updatedAt @db.Timestamptz
+
+  @@index([status, createdAt])
+}
+
+model ImporterProfile {
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  user            User               @relation(fields: [userId], references: [id])
+  companyName     String
+  /// شناسه ملی شرکت
+  nationalId      String
+  contactName     String
+  status          VerificationStatus @default(PENDING)
+  rejectionReason String?
+  /// Partner logos are shown only for companies an admin marks as having given written permission.
+  logoPermission  Boolean            @default(false)
+  reviewedById    String?
+  reviewedAt      DateTime?          @db.Timestamptz
+  createdAt       DateTime           @default(now()) @db.Timestamptz
+  updatedAt       DateTime           @updatedAt @db.Timestamptz
+
+  @@index([status, createdAt])
+}
+
+/// A private file (license, company papers). Stored outside any public path; served only
+/// through an authenticated route to its owner or an admin.
+model VerificationDocument {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        User     @relation(fields: [ownerId], references: [id])
+  kind         String
+  storageKey   String   @unique
+  originalName String
+  mimeType     String
+  size         Int
+  createdAt    DateTime @default(now()) @db.Timestamptz
+
+  @@index([ownerId])
+}
+
+model OtpChallenge {
+  id         String    @id @default(cuid())
+  mobile     String
+  /// HMAC of the code; the code itself is never stored.
+  codeHash   String
+  expiresAt  DateTime  @db.Timestamptz
+  attempts   Int       @default(0)
+  consumedAt DateTime? @db.Timestamptz
+  ip         String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  @@index([mobile, createdAt])
+  @@index([ip, createdAt])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  /// SHA-256 of the cookie token; the token itself is never stored.
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  expiresAt  DateTime @db.Timestamptz
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  /// "email" or "mobile"
+  kind        String
+  value       String
+  consentText String
+  consentAt   DateTime @db.Timestamptz
+  createdAt   DateTime @default(now()) @db.Timestamptz
+
+  @@unique([kind, value])
+}
+
+/// Admin-editable settings, including compliance rules the owner will confirm with a lawyer.
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @db.Timestamptz
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

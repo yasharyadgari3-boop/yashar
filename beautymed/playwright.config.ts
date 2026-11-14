@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { E2E_DATABASE_URL, TEST_AUTH_SECRET } from "./tests/test-env";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 
@@ -12,7 +13,6 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [["list"]],
-  globalSetup: "./tests/e2e/global-setup.ts",
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     locale: "fa-IR",
@@ -24,10 +24,21 @@ export default defineConfig({
     { name: "desktop-1440", use: { viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {
-    command: `npm run build && npm run start -- --port ${PORT}`,
+    // An up-to-date, emptied and re-seeded end-to-end database, then a production build served locally.
+    command: `npx prisma migrate deploy && npx tsx tests/e2e/prepare-db.ts && npx tsx prisma/seed.ts && npm run build && npm run start -- --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}`,
-    timeout: 240_000,
-    reuseExistingServer: !process.env.CI,
-    env: { NEWSLETTER_FILE: ".data/e2e-newsletter.json", E2E: "1" },
+    timeout: 300_000,
+    reuseExistingServer: false,
+    env: {
+      DATABASE_URL: E2E_DATABASE_URL,
+      AUTH_SECRET: TEST_AUTH_SECRET,
+      PRIVATE_STORAGE_DIR: ".data/e2e-private",
+      SMS_PROVIDER: "mock",
+      PAYMENT_GATEWAY: "mock",
+      // Mock adapters refuse to run in a production build unless this is set. Tests only.
+      ALLOW_MOCKS_IN_PRODUCTION: "true",
+      INSECURE_COOKIES: "true",
+      APP_URL: `http://127.0.0.1:${PORT}`,
+    },
   },
 });
