@@ -1,7 +1,7 @@
-# ADR-0003: OTP login with our own sessions; evaluate better-auth in Phase 2
+# ADR-0003: OTP login with our own sessions (better-auth evaluated and not adopted)
 
 **Date**: 2026-11-09
-**Status**: proposed (final decision in Phase 2)
+**Status**: accepted (decided in Phase 2, 2026-11-10)
 **Deciders**: owner, Claude
 
 ## Context
@@ -11,6 +11,16 @@ Login is by one-time password sent by SMS (through a mock adapter for now). Auth
 ## Decision
 
 Plan to implement OTP and signed-cookie sessions ourselves (HttpOnly, SameSite, rotating), with these rules: OTP stored hashed, short expiry, attempt counter, rate limits per phone and per IP, identical responses whether or not the number is registered. In Phase 2, before writing the code, compare `better-auth` against this design using its official docs and choose one.
+
+## Phase 2 evaluation of better-auth
+
+Checked against the published package `better-auth@1.7.18` (its `phone-number` plugin and type definitions), not from memory:
+- It does offer phone-number OTP with `sendOTP`, `expiresIn` and `allowedAttempts` options.
+- Its user model requires an email, so phone-only sign-up needs `getTempEmail` to invent a placeholder email per user.
+- It brings its own tables (user, session, account, verification) next to ours, its own client, and 17 runtime dependencies.
+- Our needs are small: one login method, sessions, and roles that live in our own profile tables.
+
+Decision: keep our own implementation (`src/server/auth/otp.ts`, `src/server/auth/session.ts`, about 200 lines, covered by integration tests). Revisit only if more login methods are needed.
 
 ## Alternatives Considered
 

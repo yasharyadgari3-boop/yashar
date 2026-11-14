@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useActionState, useContext, type ReactNode } from "react";
+import { createContext, startTransition, useActionState, useContext, type FormEvent, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { buttonClass } from "./button";
 
@@ -12,7 +12,7 @@ export type FormState = {
   errors?: Record<string, string>;
 };
 
-const FormStateContext = createContext<FormState>({});
+const FormStateContext = createContext<FormState & { pending?: boolean }>({});
 
 /** Field-level errors for inputs rendered inside an ActionForm. */
 export function useFieldError(name: string): string | undefined {
@@ -22,6 +22,10 @@ export function useFieldError(name: string): string | undefined {
 /**
  * A form bound to a Server Action that returns a FormState. Shows the general message in a
  * live region and exposes field errors to its children.
+ *
+ * With JavaScript the form is submitted from onSubmit, so what the person typed stays in the
+ * fields when the server reports an error (a plain `action` submit would clear the form).
+ * Without JavaScript the `action` attribute still submits it.
  */
 export function ActionForm({
   action,
@@ -35,10 +39,18 @@ export function ActionForm({
   /** Replace the fields with the success message once the action succeeds. */
   hideOnSuccess?: boolean;
 }) {
-  const [state, formAction] = useActionState(action, {});
+  const [state, formAction, pending] = useActionState(action, {});
   const done = hideOnSuccess && state.ok;
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const formData = new FormData(event.currentTarget, submitter);
+    startTransition(() => formAction(formData));
+  }
+
   return (
-    <form action={formAction} noValidate className={className}>
+    <form action={formAction} onSubmit={onSubmit} noValidate className={className}>
       <div aria-live="polite">
         {state.message ? (
           <p
@@ -50,7 +62,7 @@ export function ActionForm({
           </p>
         ) : null}
       </div>
-      {done ? null : <FormStateContext.Provider value={state}>{children}</FormStateContext.Provider>}
+      {done ? null : <FormStateContext.Provider value={{ ...state, pending }}>{children}</FormStateContext.Provider>}
     </form>
   );
 }
@@ -70,7 +82,9 @@ export function SubmitButton({
   name?: string;
   value?: string;
 }) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const context = useContext(FormStateContext);
+  const pending = status.pending || Boolean(context.pending);
   return (
     <button type="submit" disabled={pending} name={name} value={value} className={buttonClass(variant, "light", className)}>
       {pending ? pendingLabel : children}

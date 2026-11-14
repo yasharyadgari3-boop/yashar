@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
+import { getCurrentUser } from "@/server/auth/session";
+import { dashboardPath } from "@/server/rbac/permissions";
 import { Footer } from "./footer";
 import { Header, type HeaderAccount } from "./header";
 
-const guestAccount: HeaderAccount = { href: "/login", label: "ورود" };
-
-export function SiteShell({ children, account = guestAccount }: { children: ReactNode; account?: HeaderAccount }) {
+/** Page frame: header (with "sign in" or "my panel"), main content, footer. */
+export async function SiteShell({ children }: { children: ReactNode }) {
+  const user = await getCurrentUser();
+  const account: HeaderAccount = user ? { href: dashboardPath(user), label: "پنل من" } : { href: "/login", label: "ورود" };
   return (
     <>
       <Header account={account} />
