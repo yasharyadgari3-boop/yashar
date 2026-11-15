@@ -35,6 +35,8 @@ export default defineConfig({
       PRIVATE_STORAGE_DIR: ".data/e2e-private",
       SMS_PROVIDER: "mock",
       PAYMENT_GATEWAY: "mock",
+      TRANSLATION_API: "mock",
+      SEED_SAMPLE_ARTICLES: "1",
       // Mock adapters refuse to run in a production build unless this is set. Tests only.
       ALLOW_MOCKS_IN_PRODUCTION: "true",
       INSECURE_COOKIES: "true",

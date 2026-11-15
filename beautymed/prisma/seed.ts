@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { normalizePersian } from "../src/lib/persian-text";
+import { defaultTopics } from "../src/lib/pubmed";
 
 if (!process.env.DATABASE_URL && existsSync(".env")) process.loadEnvFile(".env");
 
@@ -121,6 +122,42 @@ async function main() {
       create: { courseId: course.id, slug: l.slug, ...data },
       update: data,
     });
+  }
+
+  // PubMed library: the default saved searches (left untouched if the admin already edited them).
+  for (const [index, topic] of defaultTopics.entries()) {
+    await prisma.pubmedTopic.upsert({ where: { slug: topic.slug }, create: { ...topic, sortOrder: index }, update: {} });
+  }
+  // Sample articles only for automated browser tests, which must not depend on the network.
+  // Real articles come from `npm run pubmed:fetch`.
+  if (process.env.SEED_SAMPLE_ARTICLES === "1") {
+    const topic = await prisma.pubmedTopic.findUniqueOrThrow({ where: { slug: "dermal-fillers" } });
+    const samples = [
+      { pmid: "999000001", license: "cc-by", licenseUrl: "https://creativecommons.org/licenses/by/4.0/", pmcid: "PMC999000001", translatable: true },
+      { pmid: "999000002", license: "cc-by-nc", licenseUrl: "https://creativecommons.org/licenses/by-nc/4.0/", pmcid: "PMC999000002", translatable: false },
+      { pmid: "999000003", license: null, licenseUrl: null, pmcid: null, translatable: false },
+    ];
+    for (const [i, s] of samples.entries()) {
+      const data = {
+        pmcid: s.pmcid,
+        doi: null,
+        title: `Sample article ${i + 1} for automated tests (replace)`,
+        abstract: "Sample abstract for automated tests.",
+        authors: ["Sample Author"],
+        journal: "Sample Journal",
+        pubDateText: "2026 Jan",
+        publishedAt: new Date(Date.UTC(2026, 0, 3 - i)),
+        license: s.license,
+        licenseUrl: s.licenseUrl,
+        fullTextTranslatable: s.translatable,
+      };
+      const article = await prisma.article.upsert({ where: { pmid: s.pmid }, create: { pmid: s.pmid, ...data }, update: data });
+      await prisma.articleTopic.upsert({
+        where: { articleId_topicId: { articleId: article.id, topicId: topic.id } },
+        create: { articleId: article.id, topicId: topic.id },
+        update: {},
+      });
+    }
   }
 
   console.log("Seeded test users:", seedUsers);
