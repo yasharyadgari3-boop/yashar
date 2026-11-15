@@ -40,6 +40,7 @@ model User {
   auditLogs AuditLog[]
   cart      Cart?
   orders    Order[]
+  lessonProgress LessonProgress[]
 }
 
 model PhysicianProfile {
@@ -351,4 +352,57 @@ model CollaborationProposal {
 
   @@index([importerId, createdAt])
   @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Physician training (Phase 4)
+// ---------------------------------------------------------------------------
+
+model Course {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  title      String
+  summary    String
+  /// Unpublished courses are visible to admins only.
+  published  Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  /// Name of the physician who reviewed the course content; a notice shows while it is empty.
+  reviewedBy String?
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @updatedAt @db.Timestamptz
+  lessons    Lesson[]
+
+  @@index([published, sortOrder])
+}
+
+model Lesson {
+  id              String   @id @default(cuid())
+  courseId        String
+  course          Course   @relation(fields: [courseId], references: [id])
+  slug            String
+  title           String
+  /// Plain text.
+  body            String
+  /// An https address or a path under /public. Empty until the owner provides the video.
+  videoUrl        String?
+  durationMinutes Int?
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+  progress        LessonProgress[]
+
+  @@unique([courseId, slug])
+  @@index([courseId, sortOrder])
+}
+
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id])
+  completedAt DateTime @default(now()) @db.Timestamptz
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
 }

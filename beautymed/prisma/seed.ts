@@ -104,6 +104,25 @@ async function main() {
     await prisma.productCompliance.upsert({ where: { productId: product.id }, create: { productId: product.id, ...compliance }, update: compliance });
   }
 
+  // Training: one clearly labeled sample course with two lessons (no video yet).
+  const course = await prisma.course.upsert({
+    where: { slug: "sample-course-1" },
+    create: { slug: "sample-course-1", title: "دوره‌ی نمونه ۱ — جایگزین شود", summary: "خلاصه‌ی نمونه — جایگزین شود.", published: true, sortOrder: 1 },
+    update: { published: true },
+  });
+  const lessons = [
+    { slug: "lesson-1", title: "درس نمونه ۱ — جایگزین شود", sortOrder: 0 },
+    { slug: "lesson-2", title: "درس نمونه ۲ — جایگزین شود", sortOrder: 1 },
+  ];
+  for (const l of lessons) {
+    const data = { title: l.title, body: "محتوای نمونه — جایگزین شود. متن این درس را پزشک می‌نویسد.", sortOrder: l.sortOrder };
+    await prisma.lesson.upsert({
+      where: { courseId_slug: { courseId: course.id, slug: l.slug } },
+      create: { courseId: course.id, slug: l.slug, ...data },
+      update: data,
+    });
+  }
+
   console.log("Seeded test users:", seedUsers);
 }
 

@@ -138,3 +138,26 @@ describe("upload checks", () => {
     expect(safeFileName("پروانه.pdf")).toBe("پروانه.pdf");
   });
 });
+
+import { trainingGate } from "@/server/rbac/permissions";
+
+describe("training gate: who is sent where", () => {
+  it("lets verified physicians and admins in", () => {
+    expect(trainingGate(physician, "/training/c/l")).toBeNull();
+    expect(trainingGate(admin, "/training/c/l")).toBeNull();
+  });
+
+  it("sends a visitor to login and returns them afterwards", () => {
+    expect(trainingGate(visitor, "/training/c/l")).toBe("/login?next=%2Ftraining%2Fc%2Fl");
+  });
+
+  it("sends unverified accounts to verification", () => {
+    expect(trainingGate(newUser, "/training/c/l")).toBe("/onboarding?type=physician");
+    expect(trainingGate(rejectedPhysician, "/training/c/l")).toBe("/onboarding?type=physician");
+    expect(trainingGate(pendingPhysician, "/training/c/l")).toBe("/dashboard/physician");
+  });
+
+  it("tells importers that training is for physicians", () => {
+    expect(trainingGate(importer, "/training/c/l")).toBe("/training?notice=physicians-only");
+  });
+});

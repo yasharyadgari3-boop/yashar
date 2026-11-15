@@ -7,8 +7,10 @@ import { ImageSlot } from "@/components/ui/image-slot";
 import { Section, SectionHeading } from "@/components/ui/layout";
 import { SampleNotice } from "@/components/ui/sample-notice";
 import { faqItems } from "@/content/faq";
-import { SAMPLE } from "@/content/sample";
 import { hubs, productCategories, type ImageBrief } from "@/content/site";
+import { getCurrentUser } from "@/server/auth/session";
+import { canAccessTraining } from "@/server/rbac/permissions";
+import { listPublishedCourses } from "@/server/services/training";
 import { NewsletterForm } from "./newsletter-form";
 
 /* 2. Methods */
@@ -95,10 +97,10 @@ export function PrpPrfSection() {
   );
 }
 
-/* 5. Physician training */
-const sampleCourses = ["دوره‌ی نمونه ۱", "دوره‌ی نمونه ۲", "دوره‌ی نمونه ۳"];
-
-export function TrainingSection() {
+/* 5. Physician training: featured published courses, locked for anyone who is not a verified physician */
+export async function TrainingSection() {
+  const [viewer, courses] = await Promise.all([getCurrentUser(), listPublishedCourses(3)]);
+  const unlocked = canAccessTraining(viewer);
   return (
     <Section alt labelledBy="training-title">
       <div className="reveal">
@@ -108,15 +110,23 @@ export function TrainingSection() {
           lead="دوره‌ها فقط برای پزشکان تأییدشده باز می‌شوند."
         />
       </div>
-      <ul className="grid gap-6 md:grid-cols-3">
-        {sampleCourses.map((course) => (
-          <li key={course} className="reveal border border-line bg-bg p-6">
-            <LockedBadge />
-            <h3 className="mt-5 text-xl">{course}</h3>
-            <p className="mt-2 text-muted">{SAMPLE}</p>
-          </li>
-        ))}
-      </ul>
+      {courses.length === 0 ? (
+        <p className="reveal text-muted">دوره‌ها به‌زودی منتشر می‌شوند.</p>
+      ) : (
+        <ul className="grid gap-6 md:grid-cols-3">
+          {courses.map((course) => (
+            <li key={course.slug} className="reveal border border-line bg-bg p-6">
+              {unlocked ? null : <LockedBadge />}
+              <h3 className="mt-5 text-xl">
+                <Link href={`/training/${course.slug}`} className="inline-flex min-h-11 items-center hover:underline">
+                  {course.title}
+                </Link>
+              </h3>
+              <p className="mt-2 text-muted">{course.summary}</p>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="reveal mt-12">
         <ButtonLink href="/training" variant="secondary">
           مشاهده‌ی دوره‌ها
