@@ -10,3 +10,6 @@ src/generated/
 test-results/
 playwright-report/
 coverage/
+# Written by "next dev" for coding assistants; project instructions live in ../CLAUDE.md
+AGENTS.md
+docs/screenshots/

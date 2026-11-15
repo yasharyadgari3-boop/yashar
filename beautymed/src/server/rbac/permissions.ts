@@ -41,6 +41,18 @@ export function canAccessTraining(viewer: Viewer): boolean {
   return isAdmin(viewer) || isVerifiedPhysician(viewer);
 }
 
+/**
+ * Where to send someone who may not open physician training, or null when they may.
+ * Visitors go to login; a signed-in account goes to verification (or to its pending status).
+ */
+export function trainingGate(viewer: Viewer, returnTo: string): string | null {
+  if (canAccessTraining(viewer)) return null;
+  if (!viewer) return `/login?next=${encodeURIComponent(returnTo)}`;
+  if (viewer.role === "IMPORTER") return "/training?notice=physicians-only";
+  if (viewer.role === "PHYSICIAN" && viewer.physicianStatus === "PENDING") return "/dashboard/physician";
+  return "/onboarding?type=physician";
+}
+
 export function canSubmitProducts(viewer: Viewer): boolean {
   return isVerifiedImporter(viewer);
 }
