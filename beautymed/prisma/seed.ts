@@ -5,6 +5,7 @@
 import { existsSync } from "node:fs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { normalizePersian } from "../src/lib/persian-text";
 
 if (!process.env.DATABASE_URL && existsSync(".env")) process.loadEnvFile(".env");
 
@@ -65,6 +66,42 @@ async function main() {
       reviewedAt: c.status === "APPROVED" ? new Date() : null,
     };
     await prisma.importerProfile.upsert({ where: { userId: user.id }, create: { userId: user.id, ...profile }, update: profile });
+  }
+
+  // Store: categories and clearly labeled sample products (no real brands, codes or prices).
+  const categories = [
+    { slug: "dermal-fillers", title: "فیلرهای پوستی", sortOrder: 1 },
+    { slug: "mesotherapy-products", title: "محصولات مزوتراپی", sortOrder: 2 },
+  ];
+  for (const c of categories) {
+    await prisma.category.upsert({ where: { slug: c.slug }, create: c, update: { title: c.title, sortOrder: c.sortOrder } });
+  }
+  const importerUser = await prisma.user.findUniqueOrThrow({ where: { mobile: seedUsers.importer }, include: { importer: true } });
+  const importerId = importerUser.importer!.id;
+  const sample = "نمونه — جایگزین شود";
+  const products = [
+    { slug: "sample-filler-1", name: "محصول نمونه ۱ — جایگزین شود", category: "dermal-fillers", status: "PUBLISHED" as const, irc: sample },
+    { slug: "sample-meso-1", name: "محصول نمونه ۲ — جایگزین شود", category: "mesotherapy-products", status: "PUBLISHED" as const, irc: sample },
+    // Waiting for review with an empty registration code: it cannot be published until the code is filled in.
+    { slug: "sample-pending-1", name: "محصول نمونه ۳ (بدون کد ثبت) — جایگزین شود", category: "dermal-fillers", status: "PENDING" as const, irc: "" },
+  ];
+  for (const p of products) {
+    const category = await prisma.category.findUniqueOrThrow({ where: { slug: p.category } });
+    const description = "توضیح نمونه — جایگزین شود. این متن فقط برای نمایش ساختار صفحه است.";
+    const data = {
+      name: p.name,
+      description,
+      searchText: normalizePersian(`${p.name} ${description}`),
+      categoryId: category.id,
+      importerId,
+      // Sample price only, so the mock checkout has a total. Not a real price.
+      priceToman: 1000,
+      status: p.status,
+      publishedAt: p.status === "PUBLISHED" ? new Date() : null,
+    };
+    const product = await prisma.product.upsert({ where: { slug: p.slug }, create: { slug: p.slug, ...data }, update: data });
+    const compliance = { ircCode: p.irc, importerName: "شرکت نمونه (تأییدشده)", authenticityDetails: p.irc ? sample : "" };
+    await prisma.productCompliance.upsert({ where: { productId: product.id }, create: { productId: product.id, ...compliance }, update: compliance });
   }
 
   console.log("Seeded test users:", seedUsers);

@@ -38,6 +38,8 @@ model User {
   sessions  Session[]
   documents VerificationDocument[]
   auditLogs AuditLog[]
+  cart      Cart?
+  orders    Order[]
 }
 
 model PhysicianProfile {
@@ -74,6 +76,10 @@ model ImporterProfile {
   reviewedAt      DateTime?          @db.Timestamptz
   createdAt       DateTime           @default(now()) @db.Timestamptz
   updatedAt       DateTime           @updatedAt @db.Timestamptz
+
+  products   Product[]
+  orderItems OrderItem[]
+  proposals  CollaborationProposal[]
 
   @@index([status, createdAt])
 }
@@ -154,4 +160,195 @@ model AuditLog {
   @@index([actorId])
   @@index([entity, entityId])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Store (Phase 3)
+// ---------------------------------------------------------------------------
+
+enum ProductStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  FULFILLED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+}
+
+enum ProposalStatus {
+  NEW
+  REVIEWED
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  title     String
+  sortOrder Int       @default(0)
+  products  Product[]
+}
+
+/// Submitted by an importer. Nothing is public until an admin publishes it, and publishing is
+/// refused while the required compliance fields are empty.
+model Product {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String
+  description     String
+  /// Normalized name and description, for Persian search.
+  searchText      String
+  categoryId      String
+  category        Category        @relation(fields: [categoryId], references: [id])
+  importerId      String
+  importer        ImporterProfile @relation(fields: [importerId], references: [id])
+  /// Whole Toman.
+  priceToman      Int
+  status          ProductStatus   @default(PENDING)
+  rejectionReason String?
+  reviewedById    String?
+  publishedAt     DateTime?       @db.Timestamptz
+  createdAt       DateTime        @default(now()) @db.Timestamptz
+  updatedAt       DateTime        @updatedAt @db.Timestamptz
+  deletedAt       DateTime?       @db.Timestamptz
+
+  compliance ProductCompliance?
+  images     ProductImage[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([status, categoryId, publishedAt])
+  @@index([categoryId])
+  @@index([importerId, createdAt])
+}
+
+/// Regulatory details. Which of these are required before publishing is a site setting.
+model ProductCompliance {
+  id                  String   @id @default(cuid())
+  productId           String   @unique
+  product             Product  @relation(fields: [productId], references: [id])
+  /// Iran FDA registration code (IRC).
+  ircCode             String   @default("")
+  importerName        String   @default("")
+  authenticityDetails String   @default("")
+  updatedAt           DateTime @updatedAt @db.Timestamptz
+}
+
+model ProductImage {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  storageKey     String   @unique
+  mimeType       String
+  alt            String
+  /// Before/after images are shown only after an admin sets patientConsent.
+  isBeforeAfter  Boolean  @default(false)
+  patientConsent Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  @@index([productId, sortOrder])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  updatedAt DateTime   @updatedAt @db.Timestamptz
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  @@unique([cartId, productId])
+  @@index([productId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  /// Human-readable order number shown to the buyer.
+  number        String      @unique
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  status        OrderStatus @default(PENDING_PAYMENT)
+  /// Whole Toman, fixed at checkout.
+  totalToman    Int
+  recipientName String
+  phone         String
+  city          String
+  address       String
+  postalCode    String
+  note          String?
+  paidAt        DateTime?   @db.Timestamptz
+  createdAt     DateTime    @default(now()) @db.Timestamptz
+  updatedAt     DateTime    @updatedAt @db.Timestamptz
+
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+/// Name and price are copied at checkout, so later product edits never change an order.
+model OrderItem {
+  id             String          @id @default(cuid())
+  orderId        String
+  order          Order           @relation(fields: [orderId], references: [id])
+  productId      String
+  product        Product         @relation(fields: [productId], references: [id])
+  importerId     String
+  importer       ImporterProfile @relation(fields: [importerId], references: [id])
+  productName    String
+  unitPriceToman Int
+  quantity       Int
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([importerId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orderId     String
+  order       Order         @relation(fields: [orderId], references: [id])
+  gateway     String
+  /// The gateway's reference for this attempt. Unique, so a callback is applied once.
+  authority   String        @unique
+  amountToman Int
+  status      PaymentStatus @default(INITIATED)
+  refId       String?
+  createdAt   DateTime      @default(now()) @db.Timestamptz
+  verifiedAt  DateTime?     @db.Timestamptz
+
+  @@index([orderId])
+}
+
+model CollaborationProposal {
+  id         String          @id @default(cuid())
+  importerId String
+  importer   ImporterProfile @relation(fields: [importerId], references: [id])
+  subject    String
+  message    String
+  status     ProposalStatus  @default(NEW)
+  createdAt  DateTime        @default(now()) @db.Timestamptz
+
+  @@index([importerId, createdAt])
+  @@index([status, createdAt])
 }
