@@ -1,39 +1,45 @@
 import type { Metadata } from "next";
 import { HubLayout } from "@/components/hub/hub-layout";
-import { ImageSlot } from "@/components/ui/image-slot";
-import { SampleNotice } from "@/components/ui/sample-notice";
-import { productCategories } from "@/content/site";
+import { ProductCard } from "@/components/shop/product-card";
+import { getCurrentUser } from "@/server/auth/session";
+import { canOrder, canSeePrices } from "@/server/rbac/permissions";
+import { listCategories, listPublishedProducts } from "@/server/services/products";
+import { getSetting } from "@/server/services/settings";
 
 export const metadata: Metadata = { title: "فروشگاه" };
 
 type Props = { searchParams: Promise<{ category?: string }> };
 
-/** Phase 1 storefront: categories only. The catalog, cart and orders arrive in Phase 3. */
 export default async function ShopPage({ searchParams }: Props) {
   const { category } = await searchParams;
-  const current = productCategories.find((c) => c.slug === category);
-  const visible = current ? [current] : productCategories;
+  const [viewer, categories, visitorsSeePrices] = await Promise.all([getCurrentUser(), listCategories(), getSetting("visitorsSeePrices")]);
+  const current = categories.find((c) => c.slug === category);
+  const products = await listPublishedProducts({ categorySlug: current?.slug });
+  const showPrice = canSeePrices(viewer, visitorsSeePrices);
 
   return (
     <HubLayout
       title="محصولات اصیل، فقط برای کادر درمان"
-      lead="ثبت سفارش فقط با حساب پزشک تأییدشده ممکن است."
+      lead={
+        canOrder(viewer)
+          ? "حساب شما تأیید شده است و می‌توانید سفارش ثبت کنید."
+          : "اطلاعات محصولات برای همه قابل مشاهده است. ثبت سفارش فقط با حساب پزشک تأییدشده ممکن است."
+      }
       subnavLabel="دسته‌های فروشگاه"
-      subnav={[
-        { href: "/shop", label: "همه‌ی دسته‌ها" },
-        ...productCategories.map((c) => ({ href: `/shop?category=${c.slug}`, label: c.title })),
-      ]}
+      subnav={[{ href: "/shop", label: "همه‌ی دسته‌ها" }, ...categories.map((c) => ({ href: `/shop?category=${c.slug}`, label: c.title }))]}
       currentHref={current ? `/shop?category=${current.slug}` : "/shop"}
     >
-      <SampleNotice text="محصولات پس از ثبت توسط واردکننده و تأیید مدیر در این بخش نمایش داده می‌شوند." />
-      <ul className="mt-10 grid gap-8 md:grid-cols-2">
-        {visible.map((c) => (
-          <li key={c.slug}>
-            <ImageSlot brief={c.image} sizes="(min-width: 48rem) 50vw, 100vw" />
-            <h2 className="mt-4 text-xl">{c.title}</h2>
-          </li>
-        ))}
-      </ul>
+      {products.length === 0 ? (
+        <p className="text-lg text-muted">هنوز محصولی در این بخش منتشر نشده است.</p>
+      ) : (
+        <ul className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <li key={product.slug}>
+              <ProductCard product={product} showPrice={showPrice} />
+            </li>
+          ))}
+        </ul>
+      )}
     </HubLayout>
   );
 }

@@ -15,12 +15,16 @@ export async function GET(_request: Request, { params }: Context): Promise<Respo
     const user = await getCurrentUser();
     const doc = user ? await readDocument(user, id) : null;
     if (!doc) throw new NotFoundError();
+    // Images open in the browser inside a script-free sandbox. PDFs are downloaded instead,
+    // because browsers do not show their PDF viewer inside a sandbox.
+    const isPdf = doc.mimeType === "application/pdf";
     return new Response(Buffer.from(doc.bytes), {
       headers: {
         "Content-Type": doc.mimeType,
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(doc.name)}`,
+        "Content-Disposition": `${isPdf ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(doc.name)}`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
+        ...(isPdf ? {} : { "Content-Security-Policy": "default-src 'none'; sandbox" }),
       },
     });
   } catch (error) {

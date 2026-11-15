@@ -1,6 +1,7 @@
 import "server-only";
 import { hubs } from "@/content/site";
 import { normalizePersian } from "@/lib/persian-text";
+import { listPublishedProducts } from "@/server/services/products";
 
 export type SearchResult = { href: string; title: string; kind: string };
 
@@ -22,6 +23,11 @@ export function searchContent(query: string): SearchResult[] {
   return results;
 }
 
+/** Published products first, then educational pages. Articles join in Phase 5. */
 export async function searchSite(query: string): Promise<SearchResult[]> {
-  return searchContent(query);
+  const products = await listPublishedProducts({ query });
+  return [
+    ...products.map((p) => ({ href: `/shop/${p.slug}`, title: p.name, kind: `محصول، ${p.categoryTitle}` })),
+    ...searchContent(query),
+  ];
 }
