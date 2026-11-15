@@ -406,3 +406,99 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([lessonId])
 }
+
+// ---------------------------------------------------------------------------
+// PubMed library (Phase 5)
+// ---------------------------------------------------------------------------
+
+/// A saved PubMed search the admin can edit.
+model PubmedTopic {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  /// Persian title shown in the library.
+  title         String
+  /// PubMed query (MeSH terms where they exist).
+  query         String
+  enabled       Boolean   @default(true)
+  sortOrder     Int       @default(0)
+  lastFetchedAt DateTime? @db.Timestamptz
+  articles      ArticleTopic[]
+  runs          FetchRun[]
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  pmid        String    @unique
+  pmcid       String?
+  doi         String?
+  /// Original title.
+  title       String
+  /// Original abstract. Used as translation input only; it is not displayed (publisher copyright).
+  abstract    String
+  authors     Json
+  journal     String
+  /// Publication date as printed by PubMed (for example "2026 Nov").
+  pubDateText String
+  publishedAt DateTime? @db.Timestamptz
+  /// Normalized license code read from PMC (for example "cc-by", "cc-by-nc"), or null.
+  license     String?
+  licenseUrl  String?
+  /// True only when the article is in PMC with full text and its license allows commercial derivative works.
+  fullTextTranslatable Boolean   @default(false)
+  licenseCheckedAt     DateTime? @db.Timestamptz
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  topics       ArticleTopic[]
+  translations ArticleTranslation[]
+
+  @@index([publishedAt])
+  @@index([createdAt])
+}
+
+model ArticleTopic {
+  articleId String
+  article   Article     @relation(fields: [articleId], references: [id])
+  topicId   String
+  topic     PubmedTopic @relation(fields: [topicId], references: [id])
+
+  @@id([articleId, topicId])
+  @@index([topicId])
+}
+
+enum TranslationKind {
+  SUMMARY
+  FULL_TEXT
+}
+
+/// Created the first time someone opens the article, then reused (translation cost follows use).
+model ArticleTranslation {
+  id        String          @id @default(cuid())
+  articleId String
+  article   Article         @relation(fields: [articleId], references: [id])
+  kind      TranslationKind
+  /// Persian title (SUMMARY only).
+  titleFa   String?
+  /// Persian summary of the abstract, or the Persian full text.
+  text      String
+  /// Which provider produced it ("mock" until a real one is connected).
+  provider  String
+  /// Every translation is machine-generated until an admin records a physician review.
+  physicianReviewed Boolean   @default(false)
+  reviewedById      String?
+  reviewedAt        DateTime? @db.Timestamptz
+  createdAt DateTime        @default(now()) @db.Timestamptz
+
+  @@unique([articleId, kind])
+}
+
+model FetchRun {
+  id         String      @id @default(cuid())
+  topicId    String
+  topic      PubmedTopic @relation(fields: [topicId], references: [id])
+  startedAt  DateTime    @default(now()) @db.Timestamptz
+  finishedAt DateTime?   @db.Timestamptz
+  found      Int         @default(0)
+  added      Int         @default(0)
+  error      String?
+
+  @@index([topicId, startedAt])
+}

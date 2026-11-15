@@ -12,6 +12,7 @@ export const dashboardNav: Record<"ADMIN" | "PHYSICIAN" | "IMPORTER", ReadonlyAr
     { href: "/dashboard/admin/orders", label: "سفارش‌ها" },
     { href: "/dashboard/admin/proposals", label: "پیشنهادهای همکاری" },
     { href: "/dashboard/admin/courses", label: "دوره‌ها" },
+    { href: "/dashboard/admin/pubmed", label: "PubMed" },
     { href: "/dashboard/admin/settings", label: "تنظیمات" },
   ],
   PHYSICIAN: [

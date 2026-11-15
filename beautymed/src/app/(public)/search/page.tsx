@@ -48,7 +48,6 @@ export default async function SearchPage({ searchParams }: Props) {
           </ul>
         </section>
       ) : null}
-      <p className="mt-8 text-sm text-muted">جستجو در مقاله‌ها پس از راه‌اندازی کتابخانه‌ی PubMed فعال می‌شود.</p>
     </Container>
   );
 }

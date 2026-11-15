@@ -1,6 +1,7 @@
 import "server-only";
 import { hubs } from "@/content/site";
 import { normalizePersian } from "@/lib/persian-text";
+import { searchArticles } from "@/server/services/library";
 import { listPublishedProducts } from "@/server/services/products";
 
 export type SearchResult = { href: string; title: string; kind: string };
@@ -23,11 +24,12 @@ export function searchContent(query: string): SearchResult[] {
   return results;
 }
 
-/** Published products first, then educational pages. Articles join in Phase 5. */
+/** Published products, educational pages, then library articles. */
 export async function searchSite(query: string): Promise<SearchResult[]> {
-  const products = await listPublishedProducts({ query });
+  const [products, articles] = await Promise.all([listPublishedProducts({ query }), searchArticles(query.trim().slice(0, 100))]);
   return [
     ...products.map((p) => ({ href: `/shop/${p.slug}`, title: p.name, kind: `محصول، ${p.categoryTitle}` })),
     ...searchContent(query),
+    ...articles.map((a) => ({ href: `/library/${a.pmid}`, title: a.title, kind: "مقاله" })),
   ];
 }

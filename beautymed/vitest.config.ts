@@ -20,6 +20,7 @@ export default defineConfig({
       PRIVATE_STORAGE_DIR: ".data/test-private",
       SMS_PROVIDER: "mock",
       PAYMENT_GATEWAY: "mock",
+      TRANSLATION_API: "mock",
     },
     coverage: {
       provider: "v8",

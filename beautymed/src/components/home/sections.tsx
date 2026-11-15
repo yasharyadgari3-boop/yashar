@@ -10,6 +10,8 @@ import { faqItems } from "@/content/faq";
 import { hubs, productCategories, type ImageBrief } from "@/content/site";
 import { getCurrentUser } from "@/server/auth/session";
 import { canAccessTraining } from "@/server/rbac/permissions";
+import { formatJalaliDate } from "@/lib/format";
+import { listArticles } from "@/server/services/library";
 import { listPublishedCourses } from "@/server/services/training";
 import { NewsletterForm } from "./newsletter-form";
 
@@ -136,37 +138,51 @@ export async function TrainingSection() {
   );
 }
 
-/* 6. Research library (placeholders until the PubMed module arrives in Phase 5) */
-const sampleArticles = [
-  { id: 1, reviewed: false },
-  { id: 2, reviewed: false },
-  { id: 3, reviewed: true },
-];
-
-export function ResearchSection() {
+/* 6. Research library: the three newest articles from the PubMed module */
+export async function ResearchSection() {
+  const articles = await listArticles({ take: 3 });
   return (
     <Section labelledBy="research-title">
       <div className="reveal">
         <SectionHeading id="research-title" title="تازه‌ترین پژوهش‌ها، به فارسی" />
       </div>
-      <ul className="grid gap-6 md:grid-cols-3">
-        {sampleArticles.map((article) => (
-          <li key={article.id} className="reveal border-t border-gold pt-6">
-            <TranslationBadge reviewed={article.reviewed} />
-            <h3 className="mt-4 text-xl">عنوان مقاله‌ی نمونه — جایگزین شود</h3>
-            <dl className="mt-3 space-y-1 text-base text-muted">
-              <div className="flex gap-2">
-                <dt>مجله:</dt>
-                <dd>نمونه — جایگزین شود</dd>
-              </div>
-              <div className="flex gap-2">
-                <dt>تاریخ:</dt>
-                <dd>نمونه — جایگزین شود</dd>
-              </div>
-            </dl>
-          </li>
-        ))}
-      </ul>
+      {articles.length === 0 ? (
+        <p className="reveal text-muted">مقاله‌ها پس از اولین دریافت از PubMed اینجا نمایش داده می‌شوند.</p>
+      ) : (
+        <ul className="grid gap-6 md:grid-cols-3">
+          {articles.map((article) => {
+            const summary = article.translations[0];
+            return (
+              <li key={article.pmid} className="reveal border-t border-gold pt-6">
+                <TranslationBadge reviewed={summary?.physicianReviewed ?? false} />
+                <h3 className="mt-4 text-xl">
+                  <Link href={`/library/${article.pmid}`} className="inline-flex min-h-11 items-center hover:underline">
+                    {summary?.titleFa ? (
+                      summary.titleFa
+                    ) : (
+                      <span lang="en" dir="ltr" className="text-start">
+                        {article.title}
+                      </span>
+                    )}
+                  </Link>
+                </h3>
+                <dl className="mt-3 space-y-1 text-base text-muted">
+                  <div className="flex gap-2">
+                    <dt>مجله:</dt>
+                    <dd lang="en" dir="ltr">
+                      {article.journal}
+                    </dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt>تاریخ:</dt>
+                    <dd>{article.publishedAt ? formatJalaliDate(article.publishedAt) : article.pubDateText}</dd>
+                  </div>
+                </dl>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <div className="reveal mt-12">
         <ButtonLink href="/library" variant="secondary">
           ورود به کتابخانه‌ی پژوهش

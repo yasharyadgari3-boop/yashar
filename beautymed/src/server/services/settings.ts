@@ -12,6 +12,8 @@ export const settingDefaults = {
   complianceRequiredFields: ["ircCode", "importerName", "authenticityDetails"] as string[],
   /** Before/after images need the patient-consent flag before they are shown. */
   beforeAfterRequiresConsent: true as boolean,
+  /** Licenses that permit commercial derivative works, so a full-text translation may be offered. */
+  translatableLicenses: ["cc-by", "cc0"] as string[],
 };
 
 export type SettingKey = keyof typeof settingDefaults;

@@ -69,7 +69,8 @@ test("homepage shows the owner's copy for all sections, in order", async ({ page
   }
   await expect(page.getByText("تمامی حقوق این وب‌سایت محفوظ است.")).toBeVisible();
   await expect(page.getByText("ترجمه‌ی ماشینی").first()).toBeVisible();
-  await expect(page.getByText("بازبینی‌شده", { exact: true }).first()).toBeVisible();
+  // Articles are real library entries now; none is physician-reviewed until an admin says so.
+  await expect(page.getByText("بازبینی‌شده", { exact: true })).toHaveCount(0);
 });
 
 test("hero fills the viewport and the header turns solid after scrolling", async ({ page }) => {
