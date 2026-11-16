@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
+import { connection } from "next/server";
+import { robotsConfig } from "@/lib/seo";
 
-/** Until launch (Phase 6) the site must not be indexed: it contains only sample content. */
-export default function robots(): MetadataRoute.Robots {
-  return { rules: [{ userAgent: "*", disallow: "/" }] };
+/** Read at request time, so turning SITE_INDEXABLE on at launch needs no rebuild. */
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  await connection();
+  return robotsConfig();
 }

@@ -15,7 +15,9 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "test:coverage": "vitest run --coverage",
-    "pubmed:fetch": "tsx --conditions=react-server src/server/jobs/fetch-pubmed.ts"
+    "pubmed:fetch": "tsx --conditions=react-server src/server/jobs/fetch-pubmed.ts",
+    "maintenance:cleanup": "tsx --conditions=react-server src/server/jobs/cleanup.ts",
+    "backup": "bash scripts/backup.sh"
   },
   "dependencies": {
     "@fontsource-variable/playfair-display": "5.3.0",

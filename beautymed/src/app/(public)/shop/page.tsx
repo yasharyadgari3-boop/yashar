@@ -6,7 +6,7 @@ import { canOrder, canSeePrices } from "@/server/rbac/permissions";
 import { listCategories, listPublishedProducts } from "@/server/services/products";
 import { getSetting } from "@/server/services/settings";
 
-export const metadata: Metadata = { title: "فروشگاه" };
+export const metadata: Metadata = { title: "فروشگاه", alternates: { canonical: "/shop" } };
 
 type Props = { searchParams: Promise<{ category?: string }> };
 

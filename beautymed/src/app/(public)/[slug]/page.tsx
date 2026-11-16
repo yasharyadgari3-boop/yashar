@@ -24,7 +24,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  return { title: getHub(slug)?.title ?? infoPages[slug]?.title };
+  return { title: getHub(slug)?.title ?? infoPages[slug]?.title, alternates: { canonical: `/${slug}` } };
 }
 
 export default async function HubOrInfoPage({ params }: Props) {
