@@ -5,7 +5,7 @@ import { TranslationBadge } from "@/components/ui/badge";
 import { formatJalaliDate } from "@/lib/format";
 import { listArticles, listTopics } from "@/server/services/library";
 
-export const metadata: Metadata = { title: "کتابخانه‌ی پژوهش" };
+export const metadata: Metadata = { title: "کتابخانه‌ی پژوهش", alternates: { canonical: "/library" } };
 
 type Props = { searchParams: Promise<{ topic?: string }> };
 

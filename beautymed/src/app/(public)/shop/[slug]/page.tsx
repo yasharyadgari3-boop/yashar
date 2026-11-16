@@ -14,8 +14,9 @@ import { getSetting } from "@/server/services/settings";
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = await getPublishedProduct((await params).slug);
-  return { title: product?.name };
+  const slug = (await params).slug;
+  const product = await getPublishedProduct(slug);
+  return { title: product?.name, alternates: { canonical: `/shop/${encodeURIComponent(slug)}` } };
 }
 
 export default async function ProductPage({ params }: Props) {

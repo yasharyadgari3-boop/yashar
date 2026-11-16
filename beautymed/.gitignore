@@ -13,3 +13,6 @@ coverage/
 # Written by "next dev" for coding assistants; project instructions live in ../CLAUDE.md
 AGENTS.md
 docs/screenshots/
+
+# Database and private-file backups (personal data)
+backups/

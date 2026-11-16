@@ -212,6 +212,8 @@ test("store panels are hidden from the wrong roles", async ({ page }) => {
 });
 
 test("the admin setting controls whether visitors see prices", async ({ page, browser }) => {
+  // A site-wide setting: running it in both viewports at once would let the runs flip it under each other.
+  test.skip(test.info().project.name !== "desktop-1440", "server setting, checked once");
   await loginAs(page, seed.admin);
   await page.goto("/dashboard/admin/settings");
   const checkbox = page.getByLabel("بازدیدکنندگان و حساب‌های تأییدنشده هم قیمت‌ها را ببینند.");
@@ -225,7 +227,11 @@ test("the admin setting controls whether visitors see prices", async ({ page, br
 
   await checkbox.uncheck();
   await page.getByRole("button", { name: "ذخیره‌ی تنظیمات" }).click();
-  await expect(page.getByText("تنظیمات ذخیره شد.")).toBeVisible();
+  // The message from the first save may still be on screen, so confirm the stored value instead.
+  await expect(async () => {
+    await page.reload();
+    await expect(checkbox).not.toBeChecked({ timeout: 1000 });
+  }).toPass();
   await visitor.reload();
   await expect(visitor.getByText("قیمت برای حساب‌های تأییدشده نمایش داده می‌شود.")).toBeVisible();
   await visitor.context().close();

@@ -12,8 +12,9 @@ import { completedLessonIds, getCourseOutline, listPublishedCourses } from "@/se
 type Props = { params: Promise<{ course: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const course = await getCourseOutline(null, (await params).course);
-  return { title: course?.title };
+  const slug = (await params).course;
+  const course = await getCourseOutline(null, slug);
+  return { title: course?.title, alternates: { canonical: `/training/${encodeURIComponent(slug)}` } };
 }
 
 /** Course outline. Lesson titles are public; opening a lesson needs a verified physician account. */

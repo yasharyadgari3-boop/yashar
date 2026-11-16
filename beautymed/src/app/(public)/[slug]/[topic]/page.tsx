@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, topic } = await params;
   const hub = getHub(slug);
   const found = hub?.topics.find((t) => t.slug === topic);
-  return { title: found && hub ? `${found.title} — ${hub.title}` : undefined };
+  return { title: found && hub ? `${found.title} — ${hub.title}` : undefined, alternates: { canonical: `/${slug}/${topic}` } };
 }
 
 export default async function HubTopicPage({ params }: Props) {

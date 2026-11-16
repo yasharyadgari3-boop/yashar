@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { canAccessTraining, trainingGate } from "@/server/rbac/permissions";
 import { listPublishedCourses } from "@/server/services/training";
 
-export const metadata: Metadata = { title: "آموزش پزشکان" };
+export const metadata: Metadata = { title: "آموزش پزشکان", alternates: { canonical: "/training" } };
 
 type Props = { searchParams: Promise<{ notice?: string }> };
 

@@ -16,7 +16,10 @@ type Props = { params: Promise<{ pmid: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pmid } = await params;
   const article = /^\d{1,10}$/.test(pmid) ? await getArticle(pmid) : null;
-  return { title: article?.translations.find((t) => t.kind === "SUMMARY")?.titleFa ?? article?.title };
+  return {
+    title: article?.translations.find((t) => t.kind === "SUMMARY")?.titleFa ?? article?.title,
+    alternates: article ? { canonical: `/library/${article.pmid}` } : undefined,
+  };
 }
 
 function ReviewForm({ translationId, reviewed }: { translationId: string; reviewed: boolean }) {
