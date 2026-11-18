@@ -122,16 +122,24 @@ export async function addProductImage(importerId: string, productId: string, met
   const storageKey = `product-images/${randomToken(24).toLowerCase().replace(/[^a-z0-9]/g, "x")}.${check.file.ext}`;
   await getFileStorage().put(storageKey, file.bytes);
   try {
-    await prisma.productImage.create({
-      data: {
-        productId,
-        storageKey,
-        mimeType: check.file.mime,
-        alt: parsed.data.alt,
-        isBeforeAfter: parsed.data.isBeforeAfter,
-        sortOrder: product._count.images,
-      },
-    });
+    // A new image is an importer submission like any other edit: a published product goes back
+    // to review, so nothing the importer adds is public before an admin has seen it.
+    await prisma.$transaction([
+      prisma.productImage.create({
+        data: {
+          productId,
+          storageKey,
+          mimeType: check.file.mime,
+          alt: parsed.data.alt,
+          isBeforeAfter: parsed.data.isBeforeAfter,
+          sortOrder: product._count.images,
+        },
+      }),
+      prisma.product.updateMany({
+        where: { id: productId, status: "PUBLISHED" },
+        data: { status: "PENDING", publishedAt: null },
+      }),
+    ]);
   } catch (error) {
     await getFileStorage().delete(storageKey);
     throw error;

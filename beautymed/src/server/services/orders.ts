@@ -134,14 +134,26 @@ export type PaymentOutcome = { orderId: string; paid: boolean };
 export async function confirmPayment(authority: string, callbackParams: Record<string, string>): Promise<PaymentOutcome | null> {
   const payment = await prisma.payment.findUnique({
     where: { authority },
-    select: { id: true, status: true, amountToman: true, orderId: true },
+    select: { id: true, status: true, amountToman: true, orderId: true, order: { select: { status: true, totalToman: true } } },
   });
   if (!payment) return null;
   if (payment.status === "SUCCEEDED") return { orderId: payment.orderId, paid: true };
   if (payment.status === "FAILED") return { orderId: payment.orderId, paid: false };
+  const now = new Date();
+
+  // Do not verify (capture) this attempt when the order was already paid by another attempt:
+  // Shaparak gateways return an unverified payment to the buyer automatically. The amount
+  // must also be exactly the order total computed on the server.
+  if (payment.order.status !== "PENDING_PAYMENT" || payment.amountToman !== payment.order.totalToman) {
+    await prisma.payment.updateMany({ where: { id: payment.id, status: "INITIATED" }, data: { status: "FAILED", verifiedAt: now } });
+    if (payment.amountToman !== payment.order.totalToman) {
+      await audit({ actorId: null, action: "payment.amount_mismatch", entity: "Payment", entityId: payment.id });
+    }
+    const paid = payment.order.status === "PAID" || payment.order.status === "FULFILLED";
+    return { orderId: payment.orderId, paid };
+  }
 
   const result = await getPaymentGateway().verifyPayment({ authority, amountToman: payment.amountToman, callbackParams });
-  const now = new Date();
 
   if (!result.ok) {
     await prisma.payment.updateMany({ where: { id: payment.id, status: "INITIATED" }, data: { status: "FAILED", verifiedAt: now } });

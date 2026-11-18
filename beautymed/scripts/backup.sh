@@ -5,8 +5,17 @@
 # The backups folder holds personal data: keep it private and copy it off the server.
 set -euo pipefail
 
+# Read .env, but a variable already set in the environment wins (so
+# `DATABASE_URL=... npm run backup` backs up that database, not the one in .env).
 if [ -f .env ]; then
-  set -a; . ./.env; set +a
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|\#*) continue ;; esac
+    key="${line%%=*}"
+    value="${line#*=}"
+    value="${value%\"}"; value="${value#\"}"
+    [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
+    if [ -z "${!key:-}" ] && [ -n "$value" ]; then export "$key=$value"; fi
+  done < .env
 fi
 : "${DATABASE_URL:?DATABASE_URL is not set}"
 

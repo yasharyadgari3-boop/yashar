@@ -2,6 +2,8 @@ import "server-only";
 import { z } from "zod";
 import { defaultTopics, isFullTextTranslatable, licenseCodeFromUrl } from "@/lib/pubmed";
 import { fieldErrors } from "@/lib/validators";
+import { toPersianDigits } from "@/lib/format";
+import { normalizePersian } from "@/lib/persian-text";
 import { Prisma } from "@/generated/prisma/client";
 import type { PubmedClient } from "@/server/adapters/pubmed";
 import { getTranslationProvider, type TranslationProvider } from "@/server/adapters/translation";
@@ -183,14 +185,21 @@ export function getArticle(pmid: string) {
   });
 }
 
-export async function searchArticles(normalizedQuery: string, take = 10) {
-  if (!normalizedQuery) return [];
+/**
+ * Search article titles (original and Persian). Stored text is not normalized, so the query is
+ * normalized (Arabic ي/ك to Persian, digits to Latin) and also tried with Persian digits, which
+ * Persian translations use, while original titles use Latin digits.
+ */
+export async function searchArticles(query: string, take = 10) {
+  const latin = normalizePersian(query);
+  if (!latin) return [];
+  const variants = [...new Set([latin, toPersianDigits(latin)])];
   return prisma.article.findMany({
     where: {
-      OR: [
-        { title: { contains: normalizedQuery, mode: "insensitive" } },
-        { translations: { some: { titleFa: { contains: normalizedQuery, mode: "insensitive" } } } },
-      ],
+      OR: variants.flatMap((q) => [
+        { title: { contains: q, mode: "insensitive" as const } },
+        { translations: { some: { titleFa: { contains: q, mode: "insensitive" as const } } } },
+      ]),
     },
     orderBy: [{ publishedAt: { sort: "desc", nulls: "last" } }, { id: "desc" }],
     take,
