@@ -105,6 +105,31 @@ describe("security helpers", () => {
       expect(safeNextPath(bad, "/x")).toBe("/x");
     }
   });
+
+  // Browsers delete tabs and line breaks anywhere in a URL and read "\" as "/", so "/<TAB>/evil.example"
+  // is "//evil.example" to them: a link to the login page could send a signed-in person to another site.
+  it("rejects a path a browser would read as another site (tab, carriage return, line feed, backslash)", () => {
+    for (const bad of ["/\t/evil.example", "/\r/evil.example", "/\n/evil.example", "/\r\n/evil.example", "/\t\t/evil.example", "/\\/evil.example"]) {
+      expect(safeNextPath(bad, "/x"), JSON.stringify(bad)).toBe("/x");
+    }
+  });
+
+  it("whatever it returns stays on this site, for any control character inside the path", () => {
+    const origin = "https://beautymed.ir";
+    const chars = [..."\\ \u007f\u00a0\u2028\u2029"].concat(Array.from({ length: 0x20 }, (_, i) => String.fromCharCode(i)));
+    for (const c of chars) {
+      for (const candidate of [`/${c}/evil.example`, `/${c}${c}/evil.example`, `/a${c}/evil.example`, `/${c}\\evil.example`]) {
+        const result = safeNextPath(candidate, "/fallback");
+        expect(new URL(result, origin).origin, JSON.stringify(candidate)).toBe(origin);
+      }
+    }
+  });
+
+  it("keeps ordinary same-site paths, including encoded characters and query strings", () => {
+    for (const ok of ["/dashboard/physician", "/training/sample-course-1/lesson-1", "/shop?category=dermal-fillers", "/library/123#abstract", "/%09/still-a-path", "/a%2F%2Fb"]) {
+      expect(safeNextPath(ok, "/x")).toBe(ok);
+    }
+  });
 });
 
 describe("upload checks", () => {

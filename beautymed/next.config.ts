@@ -33,6 +33,14 @@ const securityHeaders = [
 ];
 
 /**
+ * Uploaded files (license documents, product images) must never run anything, even if someone opens
+ * their address directly. Next.js applies the site-wide policy above over whatever a route handler
+ * sets (found in the final review: the routes' own sandbox policy never reached the browser), so
+ * these two paths get their own stricter policy here. For the same header key the later rule wins.
+ */
+const uploadHeaders = [{ key: "Content-Security-Policy", value: "default-src 'none'; sandbox" }];
+
+/**
  * Hosts a development proxy serves the site under (GitHub Codespaces: <name>-3000.app.github.dev).
  * Empty everywhere else, so on a normal setup only same-origin requests are accepted.
  */
@@ -52,7 +60,11 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/api/documents/:path*", headers: uploadHeaders },
+      { source: "/api/product-images/:path*", headers: uploadHeaders },
+    ];
   },
 };
 
