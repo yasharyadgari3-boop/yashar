@@ -2,7 +2,6 @@ import "server-only";
 import { z } from "zod";
 import { defaultTopics, isFullTextTranslatable, licenseCodeFromUrl } from "@/lib/pubmed";
 import { fieldErrors } from "@/lib/validators";
-import { toPersianDigits } from "@/lib/format";
 import { normalizePersian } from "@/lib/persian-text";
 import { Prisma } from "@/generated/prisma/client";
 import type { PubmedClient } from "@/server/adapters/pubmed";
@@ -185,26 +184,48 @@ export function getArticle(pmid: string) {
   });
 }
 
+// The same folding normalizePersian() applies to a query, written for the database so it can be applied
+// to stored text too: Arabic ي ى ك ؤ أ إ ٱ to the Persian letters, Persian and Arabic-Indic digits to
+// Latin, and diacritics and tatweel dropped (characters in FROM with no partner in TO are deleted).
+const FOLD_PAIRS: Array<[string, string]> = [
+  ["ي", "ی"],
+  ["ى", "ی"],
+  ["ك", "ک"],
+  ["ؤ", "و"],
+  ["أ", "ا"],
+  ["إ", "ا"],
+  ["ٱ", "ا"],
+  ...Array.from("٠١٢٣٤٥٦٧٨٩").map((d, i): [string, string] => [d, String(i)]),
+  ...Array.from("۰۱۲۳۴۵۶۷۸۹").map((d, i): [string, string] => [d, String(i)]),
+];
+const DROPPED = "\u0640" + Array.from({ length: 0x065f - 0x064b + 1 }, (_, i) => String.fromCharCode(0x064b + i)).join("") + "\u0670";
+const FOLD_FROM = FOLD_PAIRS.map(([from]) => from).join("") + DROPPED;
+const FOLD_TO = FOLD_PAIRS.map(([, to]) => to).join("");
+const ZWNJ = "\u200c";
+
+/** SQL that folds a column the way normalizePersian folds a query (the column name is a fixed string, never user input). */
+const fold = (column: string) => Prisma.sql`lower(translate(replace(${Prisma.raw(column)}, ${ZWNJ}, ' '), ${FOLD_FROM}, ${FOLD_TO}))`;
+
 /**
- * Search article titles (original and Persian). Stored text is not normalized, so the query is
- * normalized (Arabic ي/ك to Persian, digits to Latin) and also tried with Persian digits, which
- * Persian translations use, while original titles use Latin digits.
+ * Search article titles (original and Persian). Persian titles are stored exactly as the translator
+ * wrote them, possibly with Arabic ي/ك or Arabic-Indic digits, so BOTH sides are folded to one
+ * spelling: the query in code, the stored titles in the database. "%", "_" and "\" typed by a
+ * reader are literal text, not wildcards.
  */
-export async function searchArticles(query: string, take = 10) {
-  const latin = normalizePersian(query);
-  if (!latin) return [];
-  const variants = [...new Set([latin, toPersianDigits(latin)])];
-  return prisma.article.findMany({
-    where: {
-      OR: variants.flatMap((q) => [
-        { title: { contains: q, mode: "insensitive" as const } },
-        { translations: { some: { titleFa: { contains: q, mode: "insensitive" as const } } } },
-      ]),
-    },
-    orderBy: [{ publishedAt: { sort: "desc", nulls: "last" } }, { id: "desc" }],
-    take,
-    select: { pmid: true, title: true },
-  });
+export async function searchArticles(query: string, take = 10): Promise<Array<{ pmid: string; title: string }>> {
+  const folded = normalizePersian(query);
+  if (!folded) return [];
+  const pattern = `%${folded.replace(/[\\%_]/g, "\\$&")}%`;
+  return prisma.$queryRaw<Array<{ pmid: string; title: string }>>(Prisma.sql`
+    SELECT a."pmid", a."title"
+    FROM "Article" a
+    WHERE ${fold('a."title"')} LIKE ${pattern} ESCAPE '\\'
+       OR EXISTS (
+         SELECT 1 FROM "ArticleTranslation" t
+         WHERE t."articleId" = a."id" AND ${fold('t."titleFa"')} LIKE ${pattern} ESCAPE '\\'
+       )
+    ORDER BY a."publishedAt" DESC NULLS LAST, a."id" DESC
+    LIMIT ${take}`);
 }
 
 /* ---------------- Translation on demand, then cached ---------------- */

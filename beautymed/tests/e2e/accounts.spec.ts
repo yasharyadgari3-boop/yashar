@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { checkPage, freshMobile, loginAs, samplePdf, seed } from "./helpers";
+import { checkPage, formsOf, freshMobile, loginAs, replayForm, samplePdf, seed, sessionCookie, withDb } from "./helpers";
 
 test("a visitor is sent to the login page from protected areas", async ({ page }) => {
   for (const path of ["/dashboard", "/dashboard/admin", "/onboarding"]) {
@@ -54,8 +54,9 @@ test("code login, physician verification and admin approval, end to end", async 
   const documentUrl = (await request.getByRole("link", { name: /مشاهده‌ی مدرک/ }).getAttribute("href"))!;
   expect((await adminPage.request.get(documentUrl)).status()).toBe(200);
 
-  // The owner can read their own document; another account and a visitor get 404.
-  expect((await page.request.get(documentUrl)).status()).toBe(200);
+  // Documents are for admins only (CLAUDE.md, owner's decision of 27 Aban): not even the person who
+  // uploaded one can read it back. Everyone else, another account and a visitor included, gets 404.
+  expect((await page.request.get(documentUrl)).status()).toBe(404);
   const otherContext = await browser.newContext();
   const otherPage = await otherContext.newPage();
   expect((await otherPage.request.get(documentUrl)).status()).toBe(404);
@@ -170,10 +171,26 @@ test("an admin changes the price-visibility setting and it is saved", async ({ p
   await expect(page.getByText("تنظیمات ذخیره شد.")).toBeVisible();
 });
 
-test("a non-admin cannot run admin actions even by calling them directly", async ({ page }) => {
+test("a non-admin cannot run admin actions even by calling them directly", async ({ page, request }) => {
   // The settings page (and its form) is not reachable, and the document route hides other files.
   await loginAs(page, seed.physician);
   const response = await page.goto("/dashboard/admin/settings");
   expect(response?.status()).toBe(404);
   expect((await page.request.get("/api/documents/does-not-exist")).status()).toBe(404);
+
+  // Calling the action directly (final review: the earlier version of this test never did): the
+  // admin's own settings form, replayed with the physician's session, must change nothing.
+  const admin = await sessionCookie(seed.admin);
+  const form = formsOf(await (await request.get("/dashboard/admin/settings", { headers: { cookie: admin } })).text()).find((f) =>
+    f.some((field) => field.name === "visitorsSeePrices"),
+  )!;
+  const saved = async () =>
+    (await withDb((db) => db.query<{ n: number }>(`SELECT count(*)::int AS n FROM "SiteSetting" WHERE key = 'visitorsSeePrices'`))).rows[0]!.n;
+  await withDb((db) => db.query(`DELETE FROM "SiteSetting" WHERE key = 'visitorsSeePrices'`));
+  await replayForm(request, "/dashboard/admin/settings", form, { visitorsSeePrices: "on" }, await sessionCookie(seed.physician));
+  expect(await saved()).toBe(0);
+  // Control: the same replay with the admin's session is applied, so the refusal above is real.
+  await replayForm(request, "/dashboard/admin/settings", form, { visitorsSeePrices: "on" }, admin);
+  expect(await saved()).toBe(1);
+  await withDb((db) => db.query(`DELETE FROM "SiteSetting" WHERE key = 'visitorsSeePrices'`));
 });
