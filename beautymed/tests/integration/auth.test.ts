@@ -165,20 +165,21 @@ describe("verification and admin approval", () => {
     ).rejects.toMatchObject({ code: "conflict" });
   });
 
-  it("a license document is readable by its owner and admins only, and admin views are logged", async () => {
+  it("a license document is readable by admins only (not even its owner), and admin views are logged", async () => {
     const ownerId = await login(mobile);
     await submitPhysicianVerification(ownerId, { fullName: "دکتر آزمایشی", medicalCouncilNumber: "12345" }, pdf);
     const doc = await prisma.verificationDocument.findFirstOrThrow({ where: { ownerId } });
     const otherId = await login("09121110004");
     const adminId = (await prisma.user.create({ data: { mobile: "09121119999", role: "ADMIN" } })).id;
 
-    expect((await readDocument({ id: ownerId, role: "PHYSICIAN" }, doc.id))?.mimeType).toBe("application/pdf");
+    expect(await readDocument({ id: ownerId, role: "PHYSICIAN" }, doc.id)).toBeNull();
+    expect(await readDocument({ id: ownerId, role: null }, doc.id)).toBeNull();
     expect(await readDocument({ id: otherId, role: "PHYSICIAN" }, doc.id)).toBeNull();
     expect(await readDocument({ id: otherId, role: "IMPORTER" }, doc.id)).toBeNull();
     expect(await readDocument({ id: adminId, role: "ADMIN" }, "no-such-id")).toBeNull();
     expect(await prisma.auditLog.count({ where: { action: "document.viewed" } })).toBe(0);
 
-    expect(await readDocument({ id: adminId, role: "ADMIN" }, doc.id)).not.toBeNull();
+    expect((await readDocument({ id: adminId, role: "ADMIN" }, doc.id))?.mimeType).toBe("application/pdf");
     expect(await prisma.auditLog.count({ where: { action: "document.viewed", actorId: adminId } })).toBe(1);
   });
 });

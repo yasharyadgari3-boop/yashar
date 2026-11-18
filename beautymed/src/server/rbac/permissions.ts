@@ -57,9 +57,9 @@ export function canSubmitProducts(viewer: Viewer): boolean {
   return isVerifiedImporter(viewer);
 }
 
-/** License documents: the owner and admins only. */
-export function canViewDocument(viewer: Viewer, ownerId: string): boolean {
-  return viewer !== null && (isAdmin(viewer) || viewer.id === ownerId);
+/** License documents are sensitive: admins only, not even the person who uploaded them (CLAUDE.md). */
+export function canViewDocument(viewer: Viewer): boolean {
+  return isAdmin(viewer);
 }
 
 /** Where a signed-in person lands. */

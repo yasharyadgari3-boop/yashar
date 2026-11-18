@@ -5,8 +5,8 @@ import { readDocument } from "@/server/services/verification";
 type Context = { params: Promise<{ id: string }> };
 
 /**
- * Private documents (medical licenses, company papers). Only the owner and admins get the
- * file. Everyone else, signed in or not, gets the same 404, so nothing reveals that a
+ * Private documents (medical licenses, company papers). Only admins get the file (not even its
+ * owner). Everyone else, signed in or not, gets the same 404, so nothing reveals that a
  * document exists.
  */
 export async function GET(_request: Request, { params }: Context): Promise<Response> {
