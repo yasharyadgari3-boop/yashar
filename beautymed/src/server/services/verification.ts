@@ -189,14 +189,13 @@ export async function setImporterLogoPermission(adminId: string, profileId: stri
   await audit({ actorId: adminId, action: "importer.logo_permission", entity: "ImporterProfile", entityId: profileId, meta: { allowed } });
 }
 
-/** A document's bytes for its owner or an admin; null for everyone else (the route answers 404). */
+/** A document's bytes for an admin; null for everyone else, its owner included (the route answers 404). */
 export async function readDocument(viewer: { id: string; role: string | null }, documentId: string) {
+  if (viewer.role !== "ADMIN") return null;
   const doc = await prisma.verificationDocument.findUnique({ where: { id: documentId } });
   if (!doc) return null;
-  const isAdmin = viewer.role === "ADMIN";
-  if (!isAdmin && doc.ownerId !== viewer.id) return null;
   const bytes = await getFileStorage().get(doc.storageKey);
   if (!bytes) return null;
-  if (isAdmin) await audit({ actorId: viewer.id, action: "document.viewed", entity: "VerificationDocument", entityId: doc.id });
+  await audit({ actorId: viewer.id, action: "document.viewed", entity: "VerificationDocument", entityId: doc.id });
   return { bytes, mimeType: doc.mimeType, name: doc.originalName };
 }

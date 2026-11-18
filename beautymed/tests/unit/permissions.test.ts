@@ -61,12 +61,11 @@ describe("role permissions (the table from the approved plan)", () => {
     for (const v of [visitor, pendingImporter, physician, admin]) expect(canSubmitProducts(v)).toBe(false);
   });
 
-  it("license documents: the owner and admins only", () => {
-    expect(canViewDocument(physician, "u1")).toBe(true);
-    expect(canViewDocument(admin, "someone-else")).toBe(true);
-    expect(canViewDocument(physician, "someone-else")).toBe(false);
-    expect(canViewDocument(importer, "someone-else")).toBe(false);
-    expect(canViewDocument(visitor, "u1")).toBe(false);
+  it("license documents: admins only, not even the owner", () => {
+    expect(canViewDocument(admin)).toBe(true);
+    expect(canViewDocument(physician)).toBe(false);
+    expect(canViewDocument(importer)).toBe(false);
+    expect(canViewDocument(visitor)).toBe(false);
   });
 
   it("each role lands on its own panel", () => {
