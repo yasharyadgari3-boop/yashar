@@ -1,0 +1,23 @@
+// GitHub Codespaces: runs the whole BeautyMed site (with a PostgreSQL database and mock services)
+// in the browser, for review before a host is chosen. This folder is the one exception to
+// "everything inside beautymed/", because GitHub only reads .devcontainer at the repository root.
+// Guide (Persian): beautymed/docs/CODESPACES.md
+{
+  "name": "BeautyMed",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "node",
+  "hostRequirements": { "cpus": 2, "memory": "4gb" },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "BeautyMed", "onAutoForward": "openBrowser" }
+  },
+  // Once, when the codespace is created: .env, packages, database tables and sample data.
+  "postCreateCommand": "bash beautymed/scripts/codespace.sh setup",
+  // Every time the codespace opens: start the site (if it is not already running).
+  "postAttachCommand": "bash beautymed/scripts/codespace.sh start",
+  "customizations": {
+    "codespaces": { "openFiles": ["beautymed/docs/CODESPACES.md"] }
+  }
+}

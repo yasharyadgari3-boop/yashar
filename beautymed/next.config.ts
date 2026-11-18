@@ -32,10 +32,25 @@ const securityHeaders = [
   ...(isProduction ? [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" }] : []),
 ];
 
+/**
+ * Hosts a development proxy serves the site under (GitHub Codespaces: <name>-3000.app.github.dev).
+ * Empty everywhere else, so on a normal setup only same-origin requests are accepted.
+ */
+const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
+  .split(",")
+  .map((h) => h.trim())
+  .filter(Boolean);
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   // License documents and product images are uploaded through Server Actions (limit: 5 MB each).
-  experimental: { serverActions: { bodySizeLimit: "6mb" } },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "6mb",
+      ...(allowedDevOrigins.length > 0 ? { allowedOrigins: allowedDevOrigins } : {}),
+    },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
