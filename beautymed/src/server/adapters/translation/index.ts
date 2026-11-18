@@ -44,7 +44,8 @@ export function buildTranslationRequest(task: TranslationTask, input: { title: s
   instructions: string;
   article: string;
 } {
-  const escape = (s: string) => s.replace(/<\/?article>/gi, "[article]");
+  // Any spelling of an article tag (case, spaces, attributes) is neutralized, not only the exact one.
+  const escape = (s: string) => s.replace(/<\s*\/?\s*article\b[^>]*>/gi, "[article]");
   return {
     system: SYSTEM_PROMPT,
     instructions: TASK_INSTRUCTIONS[task],

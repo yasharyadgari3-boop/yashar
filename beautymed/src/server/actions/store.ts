@@ -61,7 +61,7 @@ export async function addProductImageAction(_prev: FormState, formData: FormData
     return toFormState(error);
   }
   revalidatePath("/dashboard/importer/products", "layout");
-  return { ok: true, message: "تصویر اضافه شد." };
+  return { ok: true, message: "تصویر اضافه شد. محصول تا بررسی دوباره‌ی مدیر سایت منتشر نمی‌شود." };
 }
 
 export async function removeProductImageAction(_prev: FormState, formData: FormData): Promise<FormState> {
