@@ -1,156 +1,88 @@
 @import "tailwindcss";
-
-/*
- * Design tokens. These seven colors are the only colors in the design (see src/lib/tokens.ts,
- * which a unit test keeps in sync with this file). Gold is an accent, never a fill.
- */
 @theme {
-  --color-*: initial;
-  --color-bg: #ffffff;
-  --color-alt: #f6f5f2;
-  --color-gold: #c5a46d; /* decoration only: rules, borders, icons. Never text. */
-  --color-gold-deep: #8a6a35; /* any gold text and links */
-  --color-ink: #1a1a1a;
-  --color-muted: #6b6b6b;
-  --color-line: #e7e2d8;
-
-  /* Single token for the Persian typeface, so it can be swapped for a licensed font later. */
-  --font-fa: "Vazirmatn Variable", "Vazirmatn", Tahoma, sans-serif;
-  /* Latin brand names and Latin numerals in headings use the serif; Persian glyphs fall through. */
-  --font-display: "Playfair Display Variable", "Playfair Display", "Vazirmatn Variable", "Vazirmatn", serif;
-
-  --radius-*: initial;
-  --radius-sm: 2px;
-  --radius-md: 4px;
-
-  --shadow-*: initial;
-  --shadow-hover: 0 12px 32px rgb(26 26 26 / 0.07);
-
-  --breakpoint-sm: 40rem;
-  --breakpoint-md: 48rem;
-  --breakpoint-lg: 64rem;
-  --breakpoint-xl: 80rem;
+ --color-*: initial;
+ --color-bg: #ffffff;
+ --color-alt: #f6f5f2;
+ --color-gold: #c5a46d;
+ --color-gold-deep: #8a6a35;
+ --color-ink: #1a1a1a;
+ --color-muted: #6b6b6b;
+ --color-line: #e7e2d8;
+ --font-fa: "Vazirmatn Variable", "Vazirmatn", Tahoma, sans-serif;
+ --font-display: "Playfair Display Variable", "Playfair Display", "Vazirmatn Variable", "Vazirmatn", serif;
+ --radius-*: initial;
+ --radius-sm: 2px;
+ --radius-md: 4px;
+ --shadow-*: initial;
+ --shadow-hover: 0 12px 32px rgb(26 26 26 / 0.07);
+ --breakpoint-sm: 40rem;
+ --breakpoint-md: 48rem;
+ --breakpoint-lg: 64rem;
+ --breakpoint-xl: 80rem;
 }
-
 @layer base {
-  html {
-    font-family: var(--font-fa);
-    color: var(--color-ink);
-    background: var(--color-bg);
-    line-height: 1.9;
-    -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
-  }
-
-  body {
-    min-height: 100dvh;
-    overflow-x: clip;
-  }
-
-  h1,
-  h2,
-  h3 {
-    font-family: var(--font-display);
-    line-height: 1.35;
-    text-wrap: balance;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--color-gold-deep);
-    outline-offset: 3px;
-  }
-
-  .on-dark :focus-visible,
-  .on-dark:focus-visible {
-    outline-color: var(--color-bg);
-  }
-
-  ::selection {
-    background: var(--color-line);
-  }
+ html { font-family:var(--font-fa);color:var(--color-ink);background:var(--color-bg);line-height:1.9;-webkit-text-size-adjust:100%;scroll-behavior:smooth; }
+ body {min-height:100dvh;overflow-x:clip;letter-spacing:0;}
+ h1,h2,h3 {font-family:var(--font-fa);font-weight:500;line-height:1.35;text-wrap:balance;}
+ :focus-visible {outline:2px solid var(--color-gold-deep);outline-offset:3px;}
+ .on-dark :focus-visible,.on-dark:focus-visible {outline-color:var(--color-bg);}
+ ::selection {background:var(--color-line);}
+ input:not([type=checkbox]):not([type=radio]),select,textarea {border-radius:var(--radius-md);background-color:var(--color-bg);min-height:3rem;}
+ input::placeholder,textarea::placeholder {color:var(--color-muted);}
+ button,a,input,select,textarea {touch-action:manipulation;}
+ table {width:100%;border-collapse:collapse;font-size:.875rem;}
+ th {text-align:start;font-weight:500;background:var(--color-alt);}
+ th,td {padding:1rem;border-bottom:1px solid var(--color-line);}
 }
-
 @layer components {
-  .latin {
-    font-family: var(--font-display);
-    direction: ltr;
-    unicode-bidi: isolate;
-  }
-
-  .link {
-    color: var(--color-gold-deep);
-    text-decoration: underline;
-    text-underline-offset: 6px;
-    text-decoration-thickness: 1px;
-  }
-
-  .gold-rule {
-    display: block;
-    width: 3rem;
-    height: 1px;
-    background: var(--color-gold);
-  }
-
-  /* Visually hidden, still read by screen readers. */
-  .sr-only-focusable:not(:focus):not(:focus-within) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+ .latin {font-family:var(--font-display);direction:ltr;unicode-bidi:isolate;}
+ .link {color:var(--color-gold-deep);text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:1px;}
+ .gold-rule {display:block;width:2rem;height:1px;background:var(--color-gold);}
+ .sr-only-focusable:not(:focus):not(:focus-within) {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+ header {box-shadow:0 1px 0 var(--color-line);}
+ header nav a {font-size:.8125rem;}
+ header nav a[aria-current=page] {color:var(--color-gold-deep);}
+ header a.latin {font-size:1.875rem;}
+ header.on-dark {color:var(--color-ink);background:var(--color-bg);border-color:var(--color-line);}
+ header.on-dark :focus-visible {outline-color:var(--color-gold-deep);}
+ .card-zoom-media,.card-zoom,section.border,li.border {border-radius:var(--radius-md);}
+ .card-zoom:hover {text-decoration-color:var(--color-gold);}
+ .card-zoom>span:first-of-type {line-height:1.8;}
+ footer {border-top:1px solid var(--color-line);}
+ footer nav a {font-size:.875rem;color:var(--color-muted);}
+ .beautymed-hero {position:relative;display:flex;align-items:center;min-height:35rem;height:min(43rem,76dvh);overflow:hidden;background:var(--color-alt);}
+ .beautymed-hero-photo {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+ .beautymed-hero-inner {position:relative;width:100%;max-width:72rem;margin-inline:auto;padding:6rem 2rem 3rem;}
+ .beautymed-hero-copy {max-width:30rem;}
+ .beautymed-eyebrow {display:flex;align-items:center;gap:.75rem;color:var(--color-gold-deep);font-size:.75rem;}
+ .beautymed-eyebrow::before {content:"";width:2rem;height:1px;background:var(--color-gold);}
+ .beautymed-brand {font-family:var(--font-display);font-size:4.5rem;font-weight:400;line-height:1.2;direction:ltr;text-align:start;margin-block:1rem;}
+ .beautymed-brand span {color:var(--color-gold-deep);}
+ .beautymed-hero h2 {font-size:2.25rem;line-height:1.6;font-weight:300;}
+ .beautymed-hero-search {display:flex;align-items:center;border-bottom:1px solid var(--color-muted);margin-top:1.75rem;}
+ .beautymed-hero-search input {width:100%;min-width:0;background:transparent;padding:.75rem 0;font-size:.875rem;border:0;}
+ .beautymed-hero-search button {display:flex;width:3rem;min-height:3rem;justify-content:center;align-items:center;flex-shrink:0;}
+ .beautymed-editorial {position:relative;overflow:hidden;background:var(--color-alt);}
+ .beautymed-editorial img {position:absolute;top:0;height:100%;width:400%;max-width:none;object-fit:cover;}
 }
-
-/*
- * Motion. Only three effects exist in the whole site:
- *   1. fade-up reveal on scroll   (.reveal)
- *   2. slow image reveal          (.img-reveal)
- *   3. gentle image zoom on hover (.card-zoom)
- * Content is hidden before reveal only when scripting is available, so nothing
- * disappears without JavaScript. Everything is disabled under prefers-reduced-motion.
- */
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  .reveal {
-    opacity: 0;
-    transform: translateY(18px);
-    transition:
-      opacity 1000ms ease,
-      transform 1000ms ease;
-  }
-
-  .reveal.is-visible {
-    opacity: 1;
-    transform: none;
-  }
-
-  .img-reveal {
-    opacity: 0;
-    transition: opacity 1600ms ease;
-  }
-
-  .img-reveal.is-visible {
-    opacity: 1;
-  }
-
-  .card-zoom .card-zoom-media > * {
-    transition: transform 1400ms ease;
-  }
-
-  .card-zoom:hover .card-zoom-media > * {
-    transform: scale(1.035);
-  }
+@media(max-width:47.99rem) {
+ .beautymed-hero {min-height:45rem;height:auto;align-items:flex-start;}
+ .beautymed-hero-photo {top:auto;height:32%;bottom:0;object-position:left bottom;}
+ .beautymed-hero-inner {padding:6rem 1.25rem 16rem;}
+ .beautymed-hero-copy {max-width:100%;}
+ .beautymed-brand {font-size:3.25rem;}
+ .beautymed-hero h2 {font-size:1.625rem;}
+ .beautymed-hero-copy>p:not(.beautymed-eyebrow) {font-size:.875rem;line-height:1.9;}
 }
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition: none !important;
-  }
+@media(scripting:enabled) and (prefers-reduced-motion:no-preference) {
+ .reveal {opacity:0;transform:translateY(18px);transition:opacity 1000ms ease,transform 1000ms ease;}
+ .reveal.is-visible {opacity:1;transform:none;}
+ .img-reveal {opacity:0;transition:opacity 1600ms ease;}
+ .img-reveal.is-visible {opacity:1;}
+ .card-zoom .card-zoom-media>* {transition:transform 1400ms ease;}
+ .card-zoom:hover .card-zoom-media>* {transform:scale(1.035);}
+}
+@media(prefers-reduced-motion: reduce) {
+ html {scroll-behavior:auto;}
+ *,*::before,*::after {animation:none !important;transition:none !important;}
 }
